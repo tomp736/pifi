@@ -1,0 +1,145 @@
+[
+    {
+      "name": "takeout",
+      "filters": {
+        "uber": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*UBER.*EATS.*"
+          }
+        ],
+        "glovo": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*GLOVO.*"
+          }
+        ],
+        "wolt": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*Wolt.*"
+          }
+        ],
+        "mcdonalds": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*MCDONALDS.*"
+          }
+        ]
+      }
+    },
+    {
+      "name": "coffee",
+      "filters": {
+        "coffee": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*COFFEE.*"
+          }
+        ],
+        "tonka": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*Cukiernia Tonka.*"
+          }
+        ],
+        "costa": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*costa.*"
+          }
+        ],
+        "starbucks": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*starbucks.*"
+          }
+        ]
+      }
+    },
+    {
+      "name": "groceries",
+      "filters": {
+        "CARREFOUR": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*CARREFOUR.*"
+          }
+        ],
+        "PUTKA": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*PUTKA.*"
+          }
+        ],
+        "BIEDRONKA": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*BIEDRONKA.*"
+          }
+        ],
+        "AUCHAN": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*AUCHAN.*"
+          }
+        ]
+      }
+    },
+    {
+      "name": "bills",
+      "filters": {
+        "RENT": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "title",
+            "regex": ".*Inflancka.*"
+          }
+        ],
+        "INTERNET": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*BLUEMEDIA*"
+          },
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "title",
+            "regex": ".*orange*"
+          }
+        ]
+      }
+    },
+    {
+      "name": "healthcare",
+      "filters": {
+        "MEDICOVER": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*MEDICOVER.*"
+          }
+        ],
+        "CMD": [
+          {
+            "type": "RegexFieldFilterStrategy",
+            "field_name": "counterparty_data",
+            "regex": ".*CMD*"
+          }
+        ]
+      }
+    }
+  ]
+  

@@ -1,0 +1,4 @@
+FROM ghcr.io/labrats-work/ops-images/python:latest
+
+COPY ./src/pyfi_core/ ./pyfi_core
+RUN pip3 install ./pyfi_core

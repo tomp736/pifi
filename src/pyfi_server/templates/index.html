@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transaction Chart</title>
+    <!--Chart.js CDN (Content Delivery Network) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <!--Chart.js Date Adapter CDN (Content Delivery Network) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <canvas id="transaction-chart"></canvas>
+    <input type="date" id="dateStartValue" value="2023-01-01">
+    <input type="date" id="dateEndValue" value="">
+    <input type="number" id="timeDeltaInput" value="5">
+    <button id="addDataButton">Add Data</button>
+    <button id="clearDataButton">Clear Data</button>
+    
+    <script>
+        const addDataButton = document.getElementById('addDataButton');
+        const timeDeltaInput = document.getElementById('timeDeltaInput');
+        const dateStartInput = document.getElementById('dateStartValue');
+        const dateEndInput = document.getElementById('dateEndValue');
+
+        const clearDataButton = document.getElementById('clearDataButton');
+
+        dateEndInput.valueAsDate = new Date();
+
+        function getRandomColor() {
+            // Generate a random number between 0 and 255 for each color channel
+            const red = Math.floor(Math.random() * 256);
+            const green = Math.floor(Math.random() * 256);
+            const blue = Math.floor(Math.random() * 256);
+          
+            // Check if the color is too light or too dark
+            const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+            if (luminance > 0.8 || luminance < 0.2) {
+              return getRandomColor();
+            }
+          
+            // Return the color with the given opacity
+            return { red, green, blue }
+          }
+
+          
+        clearDataButton.addEventListener('click', () => {
+            chart.data.datasets = []
+            chart.update();
+        });
+        addDataButton.addEventListener('click', () => {
+            const timeDelta = timeDeltaInput.value;
+            const startDate = dateStartInput.value;
+            const endDate = dateEndInput.value;
+
+            fetch(`/api/transaction/view?start_date=${startDate}&end_date=${endDate}&time_delta_d=${timeDelta}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                const categories = data.map(item => item.category).filter((item, i, ar) => ar.indexOf(item) === i);                
+                const datasets = [];
+                for(i in categories)
+                {
+                    category = categories[i];
+                    category_data = data.filter(item => item.category == category).map(item => {
+                            return { 
+                                x: item.start_date, 
+                                y: item.income + item.expense 
+                            }
+                    });
+                    randomColor = getRandomColor();
+                    datasets.push({
+                        label: `${category} (${timeDelta})`,
+                        data: category_data,
+                        backgroundColor: `rgba(${randomColor.red}, ${randomColor.green}, ${randomColor.blue}, .2)`,
+                        borderColor: `rgba(${randomColor.red}, ${randomColor.green}, ${randomColor.blue}, 1)`,
+                        borderWidth: 1
+                    });
+                }
+                
+                chart.data.datasets = chart.data.datasets.concat(datasets);
+                console.log(chart.data.datasets);
+                chart.update();
+            });
+          });
+
+
+          const ctx = document.getElementById('transaction-chart').getContext('2d');
+          const chart = new Chart(ctx, {
+              type: 'bar',
+              options: {
+                  plugins: {
+                      title: {
+                          display: true,
+                          text: "Transaction View",
+                          font: {
+                              size: 25,
+                          }
+                      },
+                      legend: {
+                          display: true,
+                      }
+                  },
+                  scales: {
+                      x: {
+                        stacked: true,
+                        type: 'time',
+                        ticks: {
+                            source: 'auto'
+                        },
+                        time: {
+                            unit: 'month',
+                            displayFormats: {
+                                quarter: 'MMM YYYY'
+                            }
+                        }
+                      },
+                      y: {
+                        stacked: true,
+                        ticks: {
+                            beginAtZero: true
+                        }
+                      }
+                  }
+              }
+          });
+    </script>
+</body>
+</html>
