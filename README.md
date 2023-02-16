@@ -54,12 +54,6 @@ transaction_view_builder_views = transaction_view_builder.get_views()
 - [ ] Import/Export to pyfi native datastore
 - [ ] ??
 
-### pyfi_core - 
-
-- [x] ING CSV
-- [ ] UnitTests
-- [ ] ??
-
 ### Frontend
 
 - [x] Chart.js Bars
