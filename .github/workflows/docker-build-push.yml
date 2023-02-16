@@ -16,7 +16,7 @@ jobs:
       matrix: 
         image:
           - pyfi_core
-          - pymp_server
+          - pyfi_server
 
     permissions:
       contents: read
