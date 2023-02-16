@@ -1,6 +1,8 @@
 import csv
+import datetime
+import logging
 
-from pyfi_core.modules.datasource.ing.transaction import Transaction
+from pyfi_core.transaction import Transaction
 
 class TransactionReader:
     def __init__(self, file_path, encoding = 'windows-1250'):
@@ -26,7 +28,52 @@ class TransactionReader:
             for row in csv_reader:
                 if len(row) == len(headers):
                     row_dict = {headers[i]: row[i].strip() for i in range(len(headers))}
-                    transaction = Transaction(row_dict, self.account_number)
+                    transaction = self.read_transaction_data(row_dict, self.account_number)
                     if transaction.valid:
                         transactions.append(transaction)
         return transactions
+    
+    def read_transaction_data(self, data, source_account):
+        transaction = Transaction()
+        
+        transaction.valid = True
+        try:
+            transaction.source_account = source_account.strip("'").strip().replace(" ","")
+
+            try:
+                transaction.transaction_date = datetime.datetime.strptime(
+                    data['Data transakcji'], '%Y-%m-%d')
+            except ValueError:
+                transaction.valid = False
+
+            try:
+                transaction.posting_date = datetime.datetime.strptime(
+                    data['Data księgowania'], '%Y-%m-%d')
+            except ValueError:
+                transaction.valid = False
+
+            transaction.counterparty_data = data['Dane kontrahenta'].strip("'").strip()
+            transaction.title = data['Tytuł'].strip("'").strip()
+            transaction.account = data['Nr rachunku'].strip("'").strip()
+            transaction.bank_name = data['Nazwa banku'].strip("'").strip()
+            transaction.details = data['Szczegóły'].strip("'").strip()
+            transaction.transaction_number = data['Nr transakcji'].strip("'").strip()
+            
+
+            try:
+                transaction.amount = float(
+                data['Kwota transakcji (waluta rachunku)'].replace(',', '.'))
+            except ValueError:
+                transaction.amount = 0
+                
+            
+            transaction.currency = data['Waluta'].strip("'").strip()
+            transaction.lock_amount = data['Kwota blokady/zwolnienie blokady'].strip("'").strip()
+            transaction.lock_currency = data['Waluta'].strip("'").strip()
+            transaction.payment_amount = data['Kwota płatności w walucie'].strip("'").strip()
+            transaction.payment_currency = data['Waluta'].strip("'").strip()
+        except Exception as ex:
+            logging.error(f"Error parsing data: {data}: {ex}")
+            transaction.valid = False
+            
+        return transaction
