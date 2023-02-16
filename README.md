@@ -22,7 +22,7 @@ transaction_view_filters = [
     RegexFieldFilterStrategy('counterpart_data', ".*UBER.*")
 ]
 
-# optionally create an exchange rate provider
+# optionally create an exchange rate provider to normalize amounts to a common currency
 exchange_rate_provider = ExchangeRateProvider()
 transaction_transform_currency = CurrencyTranformStrategy("PLN", exchange_rate_provider)
 
