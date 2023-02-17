@@ -12,7 +12,7 @@
 ||datasource.json|views.json|
 |---|---|---|
 |Description|Configuration for transaction data sources.|Configuration for transaction views.|
-|Example| [[include:docs/datasource.md]] | [[include:docs/views.md]] |
+|Example| [LINK](docs/datasource.md) | [LINK](docs/views.md) |
 
 
 ## Usage:
