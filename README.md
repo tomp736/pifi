@@ -5,9 +5,15 @@
 ### pyfi_core
  - Common classes for building transactionviews using transactions, filter rules, and transform rules. 
 
- ### pyfi_server
+### pyfi_server
  - Sample app using flask and charts.js. 
- - Configs are currently hardcoded to `datasource.json` and `views.json` under `src/server`.
+ - Requires `datasource.json` and `views.json` config files under `/srv/pyfi/etc/`.
+
+||datasource.json|views.json|
+|---|---|---|
+|Description|Configuration for transaction data sources.|Configuration for transaction views.|
+|Example| [[include:docs/datasource.md]] | [[include:docs/views.md]] |
+
 
 ## Usage:
 

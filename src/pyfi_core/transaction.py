@@ -10,7 +10,7 @@ class Transaction:
         self.posting_date = datetime.min
         self.counterparty_data = ""
         self.title = ""
-        self.target_account = ""
+        self.account = ""
         self.bank_name = ""
         self.details = ""
         self.transaction_number = ""
