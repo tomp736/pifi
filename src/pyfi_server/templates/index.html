@@ -1,62 +1,115 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Transaction Chart</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--Chart.js CDN (Content Delivery Network) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <!--Chart.js Date Adapter CDN (Content Delivery Network) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <!-- jsoneditor CDN (Content Delivery Network) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.9.2/jsoneditor.min.css"
+        integrity="sha512-brXxIa/fpMfluh8HUWyrNssKy/H0oRzA0HhmipgfVwbXPamMUTZn1jEsvoGGwJYCRpSx4idujdul4vFwWgPROA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.9.2/jsoneditor.min.js"
+        integrity="sha512-MP2pEPP3BGw032ovuAsX6yTu7O4J6L3YTXuyq3IpR+LuwRun9BBjOeeIKgO3bRiNlI88x3oCVb9I1/1+xmvFIg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <style>
+        canvas {
+            height: 100vh;
+            width: 100vw;
+            display: block;
+        }
+    </style>
+
 </head>
+
 <body>
-    <canvas id="transaction-chart"></canvas>
-    Start Date: <input type="date" id="dateStartValue" value="2023-01-01">
-    End Date: <input type="date" id="dateEndValue" value="">
-    Time Series Delta (Days): <input type="number" id="timeDeltaInput" value="30">
-    <button id="addDataButton">Add Data</button>
-    <button id="clearDataButton">Clear Data</button>
-    <br>
-    <textarea id="configViewsText" name="json" rows="10" cols="50">
-[
-    {
-        "name": "Expenses",
-        "filters": {
-        "all": [
-            {
-            "type": "AmountFilterStrategy",
-            "min_value": "",
-            "max_value": "0.0001"
-            }
-        ]
-        }
-    },
-    {
-        "name": "Income",
-        "filters": {
-        "all": [
-            {
-            "type": "AmountFilterStrategy",
-            "min_value": "0.0001",
-            "max_value": ""
-            }
-        ]
-        }
-    },
-    {
-        "name": "Net",
-        "filters": {
-        "all": [
-            {
-            "type": "AmountFilterStrategy",
-            "min_value": "",
-            "max_value": ""
-            }
-        ]
-        }
-    }
-]
-    </textarea>
-    <button id="postConfigViews">Update</button>
+    <nav class="navbar">
+        <div class="container">
+            <div id="navMenu" class="navbar-menu">
+                <div class="navbar-start">
+                    <div class="navbar-item dropdown">
+                        <div class="dropdown-trigger">
+                            <button class="button" aria-haspopup="true" aria-controls="dropdown-menu1">
+                                <span>DataView</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-menu1" role="menu">
+                            <div class="dropdown-content">
+                                <div class="dropdown-item">
+                                    <div class="box" style="display: inline-block">
+                                        <pre><code>
+{
+"type": "RegexFieldFilterStrategy",
+"field_name": "counterparty_data",
+"regex": ".*Wolt.*"
+}
+                                    </code></pre>
+                                    </div>
+                                    <div class="box" style="display: inline-block">
+                                        <pre><code>
+{
+"type": "AmountFilterStrategy",
+"min_value": "-2200",
+"max_value": "-2200"
+}
+                                    </code></pre>
+                                    </div>
+                                </div>
+                                <div class="dropdown-item">
+                                    <div id="jsonEditor" style="height: 60vh; width: 90vw;"></div>
+                                </div>
+                                <hr class="dropdown-divider">
+                                <button class="input is-primary" id="postConfigViews">Update</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="navbar-item control is-expanded">
+                        <input class="input is-primary" type="date" id="dateStartValue" value="2023-01-01">
+                    </div>
+                    <div class="navbar-item control is-expanded">
+                        <input class="input is-primary" type="date" id="dateEndValue" value="">
+                    </div>
+                    <div class="navbar-item control is-expanded">
+                        <input class="input is-primary" type="number" id="timeDeltaInput" value="30">
+                    </div>
+                    <div class="navbar-item control is-expanded">
+                        <button class="input is-primary" id="addDataButton">Add Data</button>
+                    </div>
+                    <div class="navbar-item control is-expanded">
+                        <button class="input is-primary" id="clearDataButton">Clear Data</button>
+                    </div>
+                </div>
+
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <div class="buttons">
+                            <a class="button is-dark">Github</a>
+                            <a class="button is-link">Download</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero is-link is-fullheight-with-navbar">
+        <div class="hero-body">
+            <canvas id="transaction-chart" style='background-color:white; width: 100vw; height: 90vh;'></canvas>
+        </div>
+    </section>
     <script>
         const addDataButton = document.getElementById('addDataButton');
         const timeDeltaInput = document.getElementById('timeDeltaInput');
@@ -75,35 +128,34 @@
             const red = Math.floor(Math.random() * 256);
             const green = Math.floor(Math.random() * 256);
             const blue = Math.floor(Math.random() * 256);
-          
+
             // Check if the color is too light or too dark
             const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
             if (luminance > 0.8 || luminance < 0.2) {
-              return getRandomColor();
+                return getRandomColor();
             }
-          
+
             // Return the color with the given opacity
             return { red, green, blue }
-          }
+        }
 
-          
+
         clearDataButton.addEventListener('click', () => {
             chart.data.datasets = []
             chart.update();
         });
-        postConfigViews.addEventListener('click', () => {            
-            data = JSON.parse(configViewsText.value);
+        postConfigViews.addEventListener('click', () => {
             url = `/api/config/views`
             fetch(url, {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json'
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
-              })
-              .then(response => response.json())
-              .then(data => console.log(data))
-              .catch(error => console.error(error));
+                body: JSON.stringify(editor.get())
+            })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error(error));
         });
         addDataButton.addEventListener('click', () => {
             const timeDelta = timeDeltaInput.value;
@@ -111,93 +163,149 @@
             const endDate = dateEndInput.value;
 
             fetch(`/api/transaction/view?start_date=${startDate}&end_date=${endDate}&time_delta_d=${timeDelta}`)
-            .then(response => response.json())
-            .then(data => {
-                const categories = data.map(item => item.metadata.category).filter((item, i, ar) => ar.indexOf(item) === i);                
-                const datasets = [];
-                for(i in categories)
-                {
-                    category = categories[i];
-                    let category_data = data.filter(item => item.metadata.category == category)
-                        .reduce((result, item) => {
-                            let existing = result.find(entry => entry.x === item.start_date);
-                            if (existing) {
-                                existing.y += item.income + item.expense;
-                            } else {
-                                result.push({ x: item.start_date, y: item.income + item.expense });
-                            }
-                            return result;
-                        }, []);
-                    console.log(`${category} (${timeDelta})`)
-                    console.log(category_data)
-                    randomColor = getRandomColor();
-                    datasets.push({
-                        label: `${category} (${timeDelta})`,
-                        data: category_data,
-                        backgroundColor: `rgba(${randomColor.red}, ${randomColor.green}, ${randomColor.blue}, .2)`,
-                        borderColor: `rgba(${randomColor.red}, ${randomColor.green}, ${randomColor.blue}, 1)`,
-                        borderWidth: 1
-                    });
-                }
-                
-                chart.data.datasets = chart.data.datasets.concat(datasets);
-                console.log(chart.data.datasets);
-                chart.update();
-            });
-          });
+                .then(response => response.json())
+                .then(data => {
+                    const categories = data.map(item => item.metadata.category).filter((item, i, ar) => ar.indexOf(item) === i);
+                    const datasets = [];
+                    for (i in categories) {
+                        category = categories[i];
+                        let category_data = data.filter(item => item.metadata.category == category)
+                            .reduce((result, item) => {
+                                let existing = result.find(entry => entry.x === item.start_date);
+                                if (existing) {
+                                    existing.y += item.income + item.expense;
+                                } else {
+                                    result.push({ x: item.start_date, y: item.income + item.expense });
+                                }
+                                return result;
+                            }, []);
+                        console.log(`${category} (${timeDelta})`)
+                        console.log(category_data)
+                        randomColor = getRandomColor();
+                        datasets.push({
+                            label: `${category} (${timeDelta})`,
+                            data: category_data,
+                            backgroundColor: `rgba(${randomColor.red}, ${randomColor.green}, ${randomColor.blue}, .2)`,
+                            borderColor: `rgba(${randomColor.red}, ${randomColor.green}, ${randomColor.blue}, 1)`,
+                            borderWidth: 1
+                        });
+                    }
+
+                    chart.data.datasets = chart.data.datasets.concat(datasets);
+                    console.log(chart.data.datasets);
+                    chart.update();
+                });
+        });
 
 
-          const ctx = document.getElementById('transaction-chart').getContext('2d');
-          const chart = new Chart(ctx, {
-              type: 'bar',
-              options: {
-                  plugins: {
-                      title: {
-                          display: true,
-                          text: "Transaction View",
-                          font: {
-                              size: 25,
-                          }
-                      },
-                      legend: {
-                          display: true,
-                      }
-                  },
-                  scales: {
+        const ctx = document.getElementById('transaction-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Transaction View",
+                        font: {
+                            size: 25,
+                        }
+                    },
+                    legend: {
+                        display: true,
+                    }
+                },
+                scales: {
                     x: {
-                      stacked: true,
-                      type: 'time',
-                      ticks: {
-                          source: 'auto'
-                      },
-                      time: {
-                          unit: 'month',
-                          displayFormats: {
-                              quarter: 'MMM YYYY'
-                          }
-                      }
+                        stacked: true,
+                        type: 'time',
+                        ticks: {
+                            source: 'auto'
+                        },
+                        time: {
+                            unit: 'month',
+                            displayFormats: {
+                                quarter: 'MMM YYYY'
+                            }
+                        }
                     },
-                    cat: {
-                      stacked: true,
-                      type: 'time',
-                      ticks: {
-                          source: 'auto'
-                      },
-                      time: {
-                          unit: 'month',
-                          displayFormats: {
-                              quarter: 'MMM YYYY'
-                          }
-                      }
-                    },
-                      y: {
+                    y: {
+                        stacked: true,
                         ticks: {
                             beginAtZero: true
                         }
-                      }
-                  }
-              }
-          });
+                    }
+                }
+            }
+        });
+    </script>
+
+
+    <script>
+        // Get the JSON data from the textarea
+        let json = [
+            {
+                "name": "Expenses",
+                "filters": {
+                    "all": [
+                        {
+                            "type": "AmountFilterStrategy",
+                            "min_value": "",
+                            "max_value": "0.0001"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Income",
+                "filters": {
+                    "all": [
+                        {
+                            "type": "AmountFilterStrategy",
+                            "min_value": "0.0001",
+                            "max_value": ""
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Net",
+                "filters": {
+                    "all": [
+                        {
+                            "type": "AmountFilterStrategy",
+                            "min_value": "",
+                            "max_value": ""
+                        }
+                    ]
+                }
+            }
+        ]
+
+        // Initialize a new JSONEditor instance with options
+        let container = document.getElementById('jsonEditor');
+        let options = {
+            mode: 'code',
+            modes: ['code', 'tree', 'view'],
+            onError: function (err) {
+                alert(err.toString());
+            }
+        };
+        let editor = new JSONEditor(container, options);
+
+        // Set the JSON data in the editor
+        editor.set(json);
+    </script>
+    <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+    <script>
+        var dropdowns = document.querySelectorAll('.dropdown-trigger');
+        dropdowns.forEach(function (dropdown) {
+            dropdown.addEventListener('click', function (event) {
+                event.stopPropagation();
+                dropdown.parentElement.classList.toggle('is-active');
+            });
+        });        
     </script>
 </body>
+</body>
+
 </html>
