@@ -65,28 +65,10 @@ def get_transaction_view():
         "PLN", exchange_rate_provider)
 
     transaction_views = []
-
-    for category in view_config:
-        category_name = category['name']
-        category_filters = category['filters']
-        logging.info(category_name)
-        for filter_name, transaction_view_filters in category_filters.items():
-            transaction_view_builder = TransactionViewBuilder(transactions)
-            transaction_view_builder.set_duration(
-                start_date, end_date, timedelta(days=time_delta_d))
-            transaction_view_builder.add_transform(
-                transaction_transform_currency)
-            transaction_view_builder.add_filters(transaction_view_filters)
-            transaction_view_builder_views = transaction_view_builder.get_views()
-            for view in transaction_view_builder_views:
-                view.category = category_name
-                view.filter_name = filter_name
-            transaction_views += transaction_view_builder_views
-
-    # for category, transaction_view_filters in food_category_filters.items():
-    #     transaction_view_builder.add_filters(transaction_view_filters)
-    #     transaction_views += transaction_view_builder.get_views()
-    #     transaction_view_builder.clear_filters()
+    transaction_view_builder = TransactionViewBuilder(transactions)
+    transaction_view_builder.set_duration(start_date, end_date, timedelta(days=time_delta_d))
+    transaction_view_builder.add_transform(transaction_transform_currency)
+    transaction_views = transaction_view_builder.get_config_views(view_config)
 
     return_tvc = TransactionViewCollection(
         transaction_views, start_date, end_date)

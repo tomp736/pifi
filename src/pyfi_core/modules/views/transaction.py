@@ -90,7 +90,6 @@ class AccountFilterStrategy(TransactionFilterStrategy):
                 filtered_transactions.append(transaction)
         return filtered_transactions
 
-
 class TransactionViewBuilder:
     def __init__(self, transactions):
         self.transactions = transactions
@@ -110,6 +109,9 @@ class TransactionViewBuilder:
 
     def add_transform(self, transaction_transform: TransactionTransformStrategy):
         self.transaction_transforms.append(transaction_transform)
+
+    def add_transforms(self, transaction_transforms):
+        self.transaction_transforms += transaction_transforms
 
     def add_filters(self, transaction_filters):
         self.transaction_filters += transaction_filters
@@ -131,7 +133,37 @@ class TransactionViewBuilder:
             current_date = next_date
         t.join()
         return views
-    
+
+    def get_config_views(self, view_config):
+        transaction_views = []
+        threads = []
+        for category in view_config:
+            category_name = category['name']
+            category_filters = category['filters']
+            t = threading.Thread(target=process_category, args=(
+                category_name, category_filters, transaction_views, self))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+        return transaction_views    
+
+def process_category(category_name, category_filters, transaction_views, parent_tvb):
+    logging.info(f"processing {category_name}")
+    for sub_category_name, category_filters in category_filters.items():
+        category_tvb = TransactionViewBuilder(parent_tvb.transactions)
+        category_tvb.set_duration(parent_tvb.start_date, parent_tvb.end_date, parent_tvb.time_delta)
+        category_tvb.add_filters(parent_tvb.transaction_filters + category_filters)
+        category_tvb.add_transforms(parent_tvb.transaction_transforms)
+        category_tvb_views = category_tvb.get_views()
+        for view in category_tvb_views:
+            view.category = category_name
+            view.subcategory = sub_category_name
+            view.filter_name = category_name
+        transaction_views += category_tvb_views
+    logging.info(f"processing {category_name}: end")
+
+
 def process_view(current_date, next_date, transactions, transaction_filters, transaction_transforms, views):
     date_filter = DateFilterStrategy(start_date=current_date, end_date=next_date)
     transaction_view = TransactionView(transactions, current_date, next_date, transaction_filters + [date_filter], transaction_transforms)
