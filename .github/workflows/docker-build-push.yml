@@ -11,6 +11,9 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.patch_version.outputs.new_version }}
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -75,7 +78,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:latest
-            ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ needs.prepare.steps.patch_version.outputs.new_version }}
+            ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ needs.prepare.outputs.new_version }}
 
   publish-tag:
     runs-on: ubuntu-latest
@@ -95,5 +98,5 @@ jobs:
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git tag ${{ needs.prepare.steps.patch_version.outputs.new_version }}
+          git tag ${{ needs.prepare.outputs.new_version }}
           git push origin --tags
