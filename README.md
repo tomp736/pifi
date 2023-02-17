@@ -42,7 +42,11 @@ transaction_view_builder_views = transaction_view_builder.get_views()
 
 ## Web Interface
 
+### Chart and controls.
 ![Screenshot](screenshot.png)
+
+### Dataview Editor.
+![DataView Editor](screenshot_dataview.png)
 
 
 ## Progress
@@ -63,5 +67,6 @@ transaction_view_builder_views = transaction_view_builder.get_views()
 ### Frontend
 
 - [x] Chart.js Bars
-- [ ] UI Labels for Inputs
-- [ ] Stacked Bar
+- [x] UI Labels for Inputs
+- [x] Stacked Bar
+- [ ] Cleanup Html
