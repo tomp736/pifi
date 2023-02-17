@@ -15,7 +15,48 @@
     Time Series Delta (Days): <input type="number" id="timeDeltaInput" value="30">
     <button id="addDataButton">Add Data</button>
     <button id="clearDataButton">Clear Data</button>
-    
+    <br>
+    <textarea id="configViewsText" name="json" rows="10" cols="50">
+[
+    {
+        "name": "Expenses",
+        "filters": {
+        "all": [
+            {
+            "type": "AmountFilterStrategy",
+            "min_value": "",
+            "max_value": "0.0001"
+            }
+        ]
+        }
+    },
+    {
+        "name": "Income",
+        "filters": {
+        "all": [
+            {
+            "type": "AmountFilterStrategy",
+            "min_value": "0.0001",
+            "max_value": ""
+            }
+        ]
+        }
+    },
+    {
+        "name": "Net",
+        "filters": {
+        "all": [
+            {
+            "type": "AmountFilterStrategy",
+            "min_value": "",
+            "max_value": ""
+            }
+        ]
+        }
+    }
+]
+    </textarea>
+    <button id="postConfigViews">Update</button>
     <script>
         const addDataButton = document.getElementById('addDataButton');
         const timeDeltaInput = document.getElementById('timeDeltaInput');
@@ -23,6 +64,9 @@
         const dateEndInput = document.getElementById('dateEndValue');
 
         const clearDataButton = document.getElementById('clearDataButton');
+
+        const postConfigViews = document.getElementById('postConfigViews');
+        const configViewsText = document.getElementById('configViewsText');
 
         dateEndInput.valueAsDate = new Date();
 
@@ -47,6 +91,20 @@
             chart.data.datasets = []
             chart.update();
         });
+        postConfigViews.addEventListener('click', () => {            
+            data = JSON.parse(configViewsText.value);
+            url = `/api/config/views`
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+              })
+              .then(response => response.json())
+              .then(data => console.log(data))
+              .catch(error => console.error(error));
+        });
         addDataButton.addEventListener('click', () => {
             const timeDelta = timeDeltaInput.value;
             const startDate = dateStartInput.value;
@@ -55,18 +113,23 @@
             fetch(`/api/transaction/view?start_date=${startDate}&end_date=${endDate}&time_delta_d=${timeDelta}`)
             .then(response => response.json())
             .then(data => {
-                console.log(data)
-                const categories = data.map(item => item.category).filter((item, i, ar) => ar.indexOf(item) === i);                
+                const categories = data.map(item => item.metadata.category).filter((item, i, ar) => ar.indexOf(item) === i);                
                 const datasets = [];
                 for(i in categories)
                 {
                     category = categories[i];
-                    category_data = data.filter(item => item.category == category).map(item => {
-                            return { 
-                                x: item.start_date, 
-                                y: item.income + item.expense 
+                    let category_data = data.filter(item => item.metadata.category == category)
+                        .reduce((result, item) => {
+                            let existing = result.find(entry => entry.x === item.start_date);
+                            if (existing) {
+                                existing.y += item.income + item.expense;
+                            } else {
+                                result.push({ x: item.start_date, y: item.income + item.expense });
                             }
-                    });
+                            return result;
+                        }, []);
+                    console.log(`${category} (${timeDelta})`)
+                    console.log(category_data)
                     randomColor = getRandomColor();
                     datasets.push({
                         label: `${category} (${timeDelta})`,
@@ -101,21 +164,33 @@
                       }
                   },
                   scales: {
-                      x: {
-                        stacked: true,
-                        type: 'time',
-                        ticks: {
-                            source: 'auto'
-                        },
-                        time: {
-                            unit: 'month',
-                            displayFormats: {
-                                quarter: 'MMM YYYY'
-                            }
-                        }
+                    x: {
+                      stacked: true,
+                      type: 'time',
+                      ticks: {
+                          source: 'auto'
                       },
+                      time: {
+                          unit: 'month',
+                          displayFormats: {
+                              quarter: 'MMM YYYY'
+                          }
+                      }
+                    },
+                    cat: {
+                      stacked: true,
+                      type: 'time',
+                      ticks: {
+                          source: 'auto'
+                      },
+                      time: {
+                          unit: 'month',
+                          displayFormats: {
+                              quarter: 'MMM YYYY'
+                          }
+                      }
+                    },
                       y: {
-                        stacked: true,
                         ticks: {
                             beginAtZero: true
                         }

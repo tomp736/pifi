@@ -1,6 +1,8 @@
+from collections import defaultdict
 from datetime import timedelta, date, datetime
 import logging
 import re
+import sys
 import threading
 
 # todo - extract and implement with external datasource
@@ -74,7 +76,7 @@ class DateFilterStrategy(TransactionFilterStrategy):
     def filter_transactions(self, transactions):
         filtered_transactions = []
         for transaction in transactions:
-            if self.start_date <= transaction.transaction_date <= self.end_date:
+            if self.start_date <= transaction.transaction_date < self.end_date:
                 filtered_transactions.append(transaction)
         return filtered_transactions
 
@@ -87,6 +89,19 @@ class AccountFilterStrategy(TransactionFilterStrategy):
         filtered_transactions = []
         for transaction in transactions:
             if transaction.account_number == self.account_number:
+                filtered_transactions.append(transaction)
+        return filtered_transactions
+
+
+class AmountFilterStrategy(TransactionFilterStrategy):
+    def __init__(self, min_value, max_value):
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def filter_transactions(self, transactions):
+        filtered_transactions = []
+        for transaction in transactions:
+            if self.min_value <= transaction.amount <= self.max_value:
                 filtered_transactions.append(transaction)
         return filtered_transactions
 
@@ -122,8 +137,7 @@ class TransactionViewBuilder:
     def get_views(self):
         views = []
         # get outer view transactions
-        outer_view = TransactionView(self.transactions, self.start_date, self.end_date, [
-                                     DateFilterStrategy(self.start_date, self.end_date)])
+        outer_view = TransactionView(self.transactions, self.start_date, self.end_date, [DateFilterStrategy(self.start_date, self.end_date)])
         current_date = self.start_date
         while current_date <= self.end_date:
             next_date = current_date + self.time_delta
@@ -150,25 +164,29 @@ class TransactionViewBuilder:
 
 def process_category(category_name, category_filters, transaction_views, parent_tvb):
     logging.info(f"processing {category_name}")
+    category_transaction_views = []
     for sub_category_name, category_filters in category_filters.items():
+        logging.info(f"processing {sub_category_name}: start")
         category_tvb = TransactionViewBuilder(parent_tvb.transactions)
         category_tvb.set_duration(parent_tvb.start_date, parent_tvb.end_date, parent_tvb.time_delta)
         category_tvb.add_filters(parent_tvb.transaction_filters + category_filters)
         category_tvb.add_transforms(parent_tvb.transaction_transforms)
         category_tvb_views = category_tvb.get_views()
         for view in category_tvb_views:
-            view.category = category_name
-            view.subcategory = sub_category_name
-            view.filter_name = category_name
-        transaction_views += category_tvb_views
-    logging.info(f"processing {category_name}: end")
-
+            view.metadata = {
+                'category': category_name,
+                'subcategory': sub_category_name
+            }
+        category_transaction_views += category_tvb_views
+        logging.info(f"processing {sub_category_name}: end")
+    logging.info(f"processing {category_name}: end")    
+    transaction_views += category_transaction_views
 
 def process_view(current_date, next_date, transactions, transaction_filters, transaction_transforms, views):
     date_filter = DateFilterStrategy(start_date=current_date, end_date=next_date)
     transaction_view = TransactionView(transactions, current_date, next_date, transaction_filters + [date_filter], transaction_transforms)
-    if transaction_view.has_data:
-        views.append(transaction_view)
+    #if transaction_view.has_data:
+    views.append(transaction_view)
 
 
 class TransactionViewCollection:

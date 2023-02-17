@@ -8,7 +8,7 @@ from venv import logger
 from flask import Blueprint, render_template, request
 from flask import Response
 from pyfi_core.modules.datasource.ing.transaction_reader import TransactionReader
-from pyfi_core.modules.views.config import read_view_config
+from pyfi_core.modules.views.config import parse_view_config, read_view_config
 from pyfi_core.modules.datasource.config import read_datasource_config
 
 from pyfi_core.modules.views.transaction import CurrencyTranformStrategy, DateFilterStrategy, ExchangeRateProvider, RegexFieldFilterStrategy, TransactionView, TransactionViewCollection, TransactionViewBuilder
@@ -17,10 +17,18 @@ from pyfi_server.constants import DATASOURCE_PATH
 
 app_frontend_transaction = Blueprint('app_frontend_transaction', __name__)
 
+# Global variable to store the JSON data
+CONFIG_VIEWS = []
+
 @app_frontend_transaction.route('/')
 def get_index():
     return render_template('index.html')
 
+@app_frontend_transaction.route('/api/config/views', methods=['POST'])
+def update_config_views():
+    global CONFIG_VIEWS
+    CONFIG_VIEWS = request.get_json()
+    return Response(status=200)
 
 @app_frontend_transaction.route('/api/transaction/view')
 def get_transaction_view():
@@ -58,7 +66,7 @@ def get_transaction_view():
         logger.info("Error parsing")
 
     # categories - built on filters
-    view_config = read_view_config(VIEWS_PATH)
+    view_config = parse_view_config(CONFIG_VIEWS)
 
     exchange_rate_provider = ExchangeRateProvider()
     transaction_transform_currency = CurrencyTranformStrategy(
@@ -85,7 +93,7 @@ class TransactionViewEncoder(json.JSONEncoder):
         if isinstance(obj, DateFilterStrategy):
             return DateFilterStrategyEncoder().default(obj)
         if isinstance(obj, TransactionView):
-            return {'category': obj.category, 'income': obj.income, 'expense': obj.expense, 'start_date': obj.start_date.isoformat(), 'end_date': obj.end_date.isoformat()}
+            return {'metadata': obj.metadata, 'income': obj.income, 'expense': obj.expense, 'start_date': obj.start_date.isoformat(), 'end_date': obj.end_date.isoformat()}
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
