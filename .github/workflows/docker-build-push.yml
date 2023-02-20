@@ -85,8 +85,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - id: ${{ matrix.image }}:${{ needs.prepare.outputs.new_version }}
-        name: Build and push Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: ./src
