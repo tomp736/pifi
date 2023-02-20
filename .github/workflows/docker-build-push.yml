@@ -48,7 +48,7 @@ jobs:
           - pyfi_core
           - pyfi_server
         base-image: 
-          - ghcr.io/tomp736/pyfi/pyfi_core:latest
+          - ghcr.io/tomp736/pyfi/pyfi_core
 
     permissions:
       contents: read
@@ -79,7 +79,7 @@ jobs:
           file: ./src/${{ matrix.image }}/dockerfile
           push: true
           build-args: |
-            BASE_IMAGE=${{ matrix.base-image }}
+            BASE_IMAGE=${{ matrix.base-image }}:${{ needs.prepare.outputs.new_version }}
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:latest
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ needs.prepare.outputs.new_version }}
