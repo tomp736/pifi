@@ -49,15 +49,28 @@ jobs:
           - pyfi_server
         base-image: 
           - ghcr.io/tomp736/pyfi/pyfi_core
+        exclude:
+          - image: pyfi_core
+            base-image: ghcr.io/tomp736/pyfi/pyfi_core
 
     permissions:
       contents: read
       packages: write    
 
     steps:
+
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - name: Check if image is available
+        if: ${{ matrix.base-image }}
+        run: |
+          until docker pull ${{ matrix.base-image }}:${{ needs.prepare.outputs.new_version }}; do
+            echo "Image is not available, sleeping for 10 seconds..."
+            sleep 10
+          done
+          echo "Image is available, continuing with the workflow."
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -72,7 +85,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - id: ${{ matrix.image }}:${{ needs.prepare.outputs.new_version }}
+        name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: ./src
