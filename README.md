@@ -28,8 +28,13 @@ transaction_view_filters = [
     RegexFieldFilterStrategy('counterpart_data', ".*UBER.*")
 ]
 
-# optionally create an exchange rate provider to normalize amounts to a common currency
-exchange_rate_provider = ExchangeRateProvider()
+# exchange rate provider to normalize amounts to a common currency
+# linear fit works best with free api access
+exchange_rate_provider = LinearFitOpenExchangeRatesProvider(
+    date(2021, 1, 1),
+    date(2023, 2, 1),
+    timedelta(days=60)
+)
 transaction_transform_currency = CurrencyTranformStrategy("PLN", exchange_rate_provider)
 
 ## Extract View
@@ -54,8 +59,10 @@ transaction_view_builder_views = transaction_view_builder.get_views()
 ### pyfi_core - Exchange Rates
 
 - [x] Hardcoded implementation
+- [x] OpenExchangeRatesProvider (high resulution, api calls grow with data, duplicate calls if same data requested)
+- [x] CachedOpenExchangeRatesProvider (high resulution, api calls grow with data up to data resolution)
+- [x] LinearFitOpenExchangeRatesProvider (low resolution, api calls fixed to resolution requested using start_date, end_date, timedelta(days))
 - [ ] UnitTests
-- [ ] External data provider.
 
 ### pyfi_core - DataSource
 

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from pyfi_core.modules.datasource.config import read_file as read_datasource_config_file
+from pyfi_core.modules.rates.exchange import MockExchangeRateProvider
 from pyfi_core.modules.views.config import read_file as read_dataviews_config_file
 from pyfi_core.modules.views.config import read_json as read_dataviews_json
 from venv import logger
@@ -19,10 +20,16 @@ app_frontend_transaction = Blueprint('app_frontend_transaction', __name__)
 
 # Global variable to store the JSON data
 CONFIG_DATAVIEWS = []
-
+exchange_rate_provider = MockExchangeRateProvider()
+# exchange_rate_provider = LinearFitOpenExchangeRatesProvider(
+#     date(2021, 1, 1),
+#     date(2023, 2, 1),
+#     timedelta(days=60)
+# )
 
 @app_frontend_transaction.route('/')
 def get_index():
+    logging.info(os.environ.get("OPENEXCHANGERATES_APP_ID"))
     return render_template('index.html')
 
 
@@ -67,14 +74,13 @@ def get_transaction_view():
         return_tvc, cls=TransactionViewCollectionEncoder, sort_keys=True, indent=4)
     return Response(json_response, status=200, content_type="application/json")
 
+
 def process_request(start_date, end_date, time_delta_d):
     transactions = []
     datasource_configs = read_datasource_config_file(DATASOURCE_PATH)
     view_config = read_dataviews_json(CONFIG_DATAVIEWS)
     for datasource_config in datasource_configs:
         transactions += datasource_config['datasource'].read_data()
-        
-    exchange_rate_provider = ExchangeRateProvider()
     transaction_transform_currency = CurrencyTranformStrategy(
         "PLN", exchange_rate_provider)
 
@@ -83,11 +89,12 @@ def process_request(start_date, end_date, time_delta_d):
     transaction_view_builder.set_duration(
         start_date, end_date, timedelta(days=time_delta_d))
     transaction_view_builder.add_transform(transaction_transform_currency)
-    transaction_views = transaction_view_builder.get_config_dataviews(view_config)
+    transaction_views = transaction_view_builder.get_config_dataviews(
+        view_config)
 
     return_tvc = TransactionViewCollection(
         transaction_views, start_date, end_date)
-        
+
     return return_tvc
 
 

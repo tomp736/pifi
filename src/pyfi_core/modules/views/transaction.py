@@ -4,24 +4,7 @@ import logging
 import re
 import sys
 import threading
-
-# todo - extract and implement with external datasource
-
-
-class ExchangeRateProvider:
-    def convert_currency(self, amount, from_currency, to_currency):
-        if from_currency == "":
-            from_currency = "PLN"
-
-        if from_currency == "PLN" and to_currency == "EUR":
-            return True, amount / 5
-        if from_currency == "PLN" and to_currency == "USD":
-            return True, amount / 4
-        if from_currency == "EUR" and to_currency == "PLN":
-            return True, amount * 5
-        if from_currency == "USD" and to_currency == "PLN":
-            return True, amount * 4
-        return False, amount
+from pyfi_core.modules.rates.exchange import ExchangeRateProvider
 
 
 class TransactionTransformStrategy:
@@ -37,15 +20,21 @@ class CurrencyTranformStrategy(TransactionTransformStrategy):
     def transform_transactions(self, transactions):
         for transaction in transactions:
             if transaction.currency != self.target_currency:
-                success, amount = self.exchange_rate_provider.convert_currency(
-                    transaction.amount, transaction.currency, self.target_currency)
-                if success:
-                    logging.info(
-                        f"Transform: {transaction.currency} to {self.target_currency} {transaction.amount} -> {amount}")
+                try:
+                    exchange_rates = self.exchange_rate_provider.get_exchange_rates(
+                        transaction.transaction_date)
+                    converted_amount = self.exchange_rate_provider.convert_currency(
+                        exchange_rates, 'USD',
+                        transaction.amount,
+                        transaction.currency,
+                        self.target_currency)
+
                     transaction.transform_currency = transaction.currency
                     transaction.transform_amount = transaction.amount
                     transaction.currency = self.target_currency
-                    transaction.amount = amount
+                    transaction.amount = converted_amount
+                except Exception as ex:
+                    logging.info(ex)
 
 
 class TransactionFilterStrategy:
@@ -105,6 +94,7 @@ class AmountFilterStrategy(TransactionFilterStrategy):
                 filtered_transactions.append(transaction)
         return filtered_transactions
 
+
 class TransactionViewBuilder:
     def __init__(self, transactions):
         self.transactions = transactions
@@ -137,15 +127,19 @@ class TransactionViewBuilder:
     def get_views(self):
         views = []
         # get outer view transactions
-        outer_view = TransactionView(self.transactions, self.start_date, self.end_date, [DateFilterStrategy(self.start_date, self.end_date)])
+        outer_view = TransactionView(self.transactions, self.start_date, self.end_date, [
+                                     DateFilterStrategy(self.start_date, self.end_date)])
         current_date = self.start_date
+        threads = []
         while current_date <= self.end_date:
             next_date = current_date + self.time_delta
             t = threading.Thread(target=process_view, args=(
                 current_date, next_date, outer_view.transactions, self.transaction_filters, self.transaction_transforms, views))
             t.start()
+            threads.append(t)
             current_date = next_date
-        t.join()
+        for t in threads:
+            t.join()
         return views
 
     def get_config_dataviews(self, view_config):
@@ -160,7 +154,8 @@ class TransactionViewBuilder:
             threads.append(t)
         for t in threads:
             t.join()
-        return transaction_views    
+        return transaction_views
+
 
 def process_category(category_name, category_filters, transaction_views, parent_tvb):
     logging.info(f"processing {category_name}")
@@ -168,8 +163,10 @@ def process_category(category_name, category_filters, transaction_views, parent_
     for sub_category_name, category_filters in category_filters.items():
         logging.info(f"processing {sub_category_name}: start")
         category_tvb = TransactionViewBuilder(parent_tvb.transactions)
-        category_tvb.set_duration(parent_tvb.start_date, parent_tvb.end_date, parent_tvb.time_delta)
-        category_tvb.add_filters(parent_tvb.transaction_filters + category_filters)
+        category_tvb.set_duration(
+            parent_tvb.start_date, parent_tvb.end_date, parent_tvb.time_delta)
+        category_tvb.add_filters(
+            parent_tvb.transaction_filters + category_filters)
         category_tvb.add_transforms(parent_tvb.transaction_transforms)
         category_tvb_views = category_tvb.get_views()
         for view in category_tvb_views:
@@ -179,12 +176,15 @@ def process_category(category_name, category_filters, transaction_views, parent_
             }
         category_transaction_views += category_tvb_views
         logging.info(f"processing {sub_category_name}: end")
-    logging.info(f"processing {category_name}: end")    
+    logging.info(f"processing {category_name}: end")
     transaction_views += category_transaction_views
 
+
 def process_view(current_date, next_date, transactions, transaction_filters, transaction_transforms, views):
-    date_filter = DateFilterStrategy(start_date=current_date, end_date=next_date)
-    transaction_view = TransactionView(transactions, current_date, next_date, transaction_filters + [date_filter], transaction_transforms)
+    date_filter = DateFilterStrategy(
+        start_date=current_date, end_date=next_date)
+    transaction_view = TransactionView(
+        transactions, current_date, next_date, transaction_filters + [date_filter], transaction_transforms)
     views.append(transaction_view)
 
 
