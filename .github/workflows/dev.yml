@@ -68,8 +68,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
-          context: .
-          file: src/${{ matrix.image }}/dockerfile
+          context: src
+          file: ${{ matrix.image }}/dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:latest-dev

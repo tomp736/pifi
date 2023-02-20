@@ -73,7 +73,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
-          context: ./src
+          context: src
           file: ${{ matrix.image }}/dockerfile
           push: true
           tags: |
