@@ -148,7 +148,7 @@ class TransactionViewBuilder:
         t.join()
         return views
 
-    def get_config_views(self, view_config):
+    def get_config_dataviews(self, view_config):
         transaction_views = []
         threads = []
         for category in view_config:
@@ -185,7 +185,6 @@ def process_category(category_name, category_filters, transaction_views, parent_
 def process_view(current_date, next_date, transactions, transaction_filters, transaction_transforms, views):
     date_filter = DateFilterStrategy(start_date=current_date, end_date=next_date)
     transaction_view = TransactionView(transactions, current_date, next_date, transaction_filters + [date_filter], transaction_transforms)
-    #if transaction_view.has_data:
     views.append(transaction_view)
 
 

@@ -2,8 +2,11 @@
 [
   {
     "name": "ing",
-    "type": "ing,csv",
-    "path": "/srv/pyfi/data/ing"
+    "datasource": {
+      "type" : "pyfi_core.modules.datasource.ing.csv.IngCsvTransactionReader",
+      "path" : "/srv/pyfi/data/ing",
+      "encoding" : "windows-1250"
+    }
   }
 ]  
 ```

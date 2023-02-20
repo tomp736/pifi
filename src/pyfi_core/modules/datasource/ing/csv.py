@@ -2,17 +2,26 @@ import csv
 import datetime
 import logging
 
+from pyfi_core.datasource import DataSource
 from pyfi_core.transaction import Transaction
 
-class TransactionReader:
-    def __init__(self, file_path, encoding = 'windows-1250'):
-        self.file_path = file_path
-        self.account_number = None
-        self.encoding = encoding
 
-    def read_transactions(self):
+class IngCsvDataSource(DataSource):
+    def __init__(self, path, encoding='windows-1250'):
+        self.path = path
+        self.encoding = encoding
+        self.account_number = None
+
+    def get_definition(self):
+        return {
+            "type": __class__.__name__,
+            "path": self.path,
+            "encoding": self.encoding,
+        }
+
+    def read_data(self):
         transactions = []
-        with open(self.file_path, 'r', encoding=self.encoding) as csv_file:
+        with open(self.path, 'r', encoding=self.encoding) as csv_file:
             headers = []
             csv_reader = csv.reader(csv_file, delimiter=';')
             row_number = 0
@@ -27,18 +36,21 @@ class TransactionReader:
             transactions = []
             for row in csv_reader:
                 if len(row) == len(headers):
-                    row_dict = {headers[i]: row[i].strip() for i in range(len(headers))}
-                    transaction = self.read_transaction_data(row_dict, self.account_number)
+                    row_dict = {headers[i]: row[i].strip()
+                                for i in range(len(headers))}
+                    transaction = self.read_transaction_data(
+                        row_dict, self.account_number)
                     if transaction.valid:
                         transactions.append(transaction)
         return transactions
-    
+
     def read_transaction_data(self, data, source_account):
         transaction = Transaction()
-        
+
         transaction.valid = True
         try:
-            transaction.source_account = source_account.strip("'").strip().replace(" ","")
+            transaction.source_account = source_account.strip(
+                "'").strip().replace(" ", "")
 
             try:
                 transaction.transaction_date = datetime.datetime.strptime(
@@ -52,28 +64,30 @@ class TransactionReader:
             except ValueError:
                 transaction.valid = False
 
-            transaction.counterparty_data = data['Dane kontrahenta'].strip("'").strip()
+            transaction.counterparty_data = data['Dane kontrahenta'].strip(
+                "'").strip()
             transaction.title = data['Tytuł'].strip("'").strip()
             transaction.account = data['Nr rachunku'].strip("'").strip()
             transaction.bank_name = data['Nazwa banku'].strip("'").strip()
             transaction.details = data['Szczegóły'].strip("'").strip()
-            transaction.transaction_number = data['Nr transakcji'].strip("'").strip()
-            
+            transaction.transaction_number = data['Nr transakcji'].strip(
+                "'").strip()
 
             try:
                 transaction.amount = float(
-                data['Kwota transakcji (waluta rachunku)'].replace(',', '.'))
+                    data['Kwota transakcji (waluta rachunku)'].replace(',', '.'))
             except ValueError:
                 transaction.amount = 0
-                
-            
+
             transaction.currency = data['Waluta'].strip("'").strip()
-            transaction.lock_amount = data['Kwota blokady/zwolnienie blokady'].strip("'").strip()
+            transaction.lock_amount = data['Kwota blokady/zwolnienie blokady'].strip(
+                "'").strip()
             transaction.lock_currency = data['Waluta'].strip("'").strip()
-            transaction.payment_amount = data['Kwota płatności w walucie'].strip("'").strip()
+            transaction.payment_amount = data['Kwota płatności w walucie'].strip(
+                "'").strip()
             transaction.payment_currency = data['Waluta'].strip("'").strip()
         except Exception as ex:
             logging.error(f"Error parsing data: {data}: {ex}")
             transaction.valid = False
-            
+
         return transaction

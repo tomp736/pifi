@@ -1,8 +1,16 @@
 [
   {
-    "name": "ing",
-    "type": "ing,csv",
-    "path": "/srv/pyfi/data/ing"
+    "name": "ing-1",
+    "definition": {
+      "type" : "pyfi_core.modules.datasource.ing.csv.IngCsvDataSource",
+      "path" : "/srv/pyfi/data/ing/ing-1.csv"
+    }
+  },
+  {
+    "name": "ing-2",
+    "definition": {
+      "type" : "pyfi_core.modules.datasource.ing.csv.IngCsvDataSource",
+      "path" : "/srv/pyfi/data/ing/ing-2.csv"
+    }
   }
 ]
-  

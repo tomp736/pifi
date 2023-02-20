@@ -3,13 +3,13 @@ import datetime
 import json
 import logging
 import os
+from pyfi_core.modules.datasource.config import read_file as read_datasource_config_file
+from pyfi_core.modules.views.config import read_file as read_dataviews_config_file
+from pyfi_core.modules.views.config import read_json as read_dataviews_json
 from venv import logger
 
 from flask import Blueprint, render_template, request
 from flask import Response
-from pyfi_core.modules.datasource.ing.transaction_reader import TransactionReader
-from pyfi_core.modules.views.config import parse_view_config, read_view_config
-from pyfi_core.modules.datasource.config import read_datasource_config
 
 from pyfi_core.modules.views.transaction import CurrencyTranformStrategy, DateFilterStrategy, ExchangeRateProvider, RegexFieldFilterStrategy, TransactionView, TransactionViewCollection, TransactionViewBuilder
 from pyfi_server.constants import VIEWS_PATH
@@ -18,29 +18,23 @@ from pyfi_server.constants import DATASOURCE_PATH
 app_frontend_transaction = Blueprint('app_frontend_transaction', __name__)
 
 # Global variable to store the JSON data
-CONFIG_VIEWS = []
+CONFIG_DATAVIEWS = []
+
 
 @app_frontend_transaction.route('/')
 def get_index():
     return render_template('index.html')
 
+
 @app_frontend_transaction.route('/api/config/views', methods=['POST'])
-def update_config_views():
-    global CONFIG_VIEWS
-    CONFIG_VIEWS = request.get_json()
+def update_config_dataviews():
+    global CONFIG_DATAVIEWS
+    CONFIG_DATAVIEWS = request.get_json()
     return Response(status=200)
+
 
 @app_frontend_transaction.route('/api/transaction/view')
 def get_transaction_view():
-    transactions = []
-    datasource_config = read_datasource_config(DATASOURCE_PATH)
-    for datasource in datasource_config:
-        path = datasource['path']
-        for filename in os.listdir(path):
-            if os.path.isfile(os.path.join(path, filename)):
-                csv_reader = TransactionReader(os.path.join(path, filename))
-                transactions += csv_reader.read_transactions()
-
     start_date = date.min
     try:
         if 'start_date' in request.args.keys():
@@ -66,24 +60,35 @@ def get_transaction_view():
         logger.info("Error parsing")
 
     # categories - built on filters
-    view_config = parse_view_config(CONFIG_VIEWS)
 
+    return_tvc = process_request(start_date, end_date, time_delta_d)
+
+    json_response = json.dumps(
+        return_tvc, cls=TransactionViewCollectionEncoder, sort_keys=True, indent=4)
+    return Response(json_response, status=200, content_type="application/json")
+
+def process_request(start_date, end_date, time_delta_d):
+    transactions = []
+    datasource_configs = read_datasource_config_file(DATASOURCE_PATH)
+    view_config = read_dataviews_json(CONFIG_DATAVIEWS)
+    for datasource_config in datasource_configs:
+        transactions += datasource_config['datasource'].read_data()
+        
     exchange_rate_provider = ExchangeRateProvider()
     transaction_transform_currency = CurrencyTranformStrategy(
         "PLN", exchange_rate_provider)
 
     transaction_views = []
     transaction_view_builder = TransactionViewBuilder(transactions)
-    transaction_view_builder.set_duration(start_date, end_date, timedelta(days=time_delta_d))
+    transaction_view_builder.set_duration(
+        start_date, end_date, timedelta(days=time_delta_d))
     transaction_view_builder.add_transform(transaction_transform_currency)
-    transaction_views = transaction_view_builder.get_config_views(view_config)
+    transaction_views = transaction_view_builder.get_config_dataviews(view_config)
 
     return_tvc = TransactionViewCollection(
         transaction_views, start_date, end_date)
-
-    json_response = json.dumps(
-        return_tvc, cls=TransactionViewCollectionEncoder, sort_keys=True, indent=4)
-    return Response(json_response, status=200, content_type="application/json")
+        
+    return return_tvc
 
 
 class TransactionViewEncoder(json.JSONEncoder):

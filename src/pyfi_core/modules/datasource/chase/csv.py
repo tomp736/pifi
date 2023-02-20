@@ -2,15 +2,16 @@ import csv
 import datetime
 import logging
 
+from pyfi_core.datasource import DataSource
 from pyfi_core.transaction import Transaction
 
-class TransactionReader:
+class ChaseCsvDataSource(DataSource):
     def __init__(self, file_path, encoding = 'windows-1250'):
         self.file_path = file_path
         self.account_number = ""
         self.encoding = encoding
 
-    def read_transactions(self):
+    def read_data(self):
         transactions = []
         with open(self.file_path, 'r', encoding=self.encoding) as csv_file:
             headers = []

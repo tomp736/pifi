@@ -1,9 +1,7 @@
-FROM ghcr.io/labrats-work/ops-images/python:latest
+ARG BASE_IMAGE=ghcr.io/tomp736/pyfi/pyfi_core:latest
+FROM $BASE_IMAGE
 
-COPY ./src/pyfi_core/ ./pyfi_core
-RUN pip3 install ./pyfi_core
-
-COPY ./src/pyfi_server/ ./pyfi_server
+COPY ./pyfi_server/ ./pyfi_server
 RUN pip3 install ./pyfi_server
 
 CMD ["python", "-u", "-m" , "pyfi_server"]

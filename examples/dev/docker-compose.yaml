@@ -1,0 +1,69 @@
+---
+version: "3.3"
+services:
+
+  # PYFI Services
+  pyfi_server:
+    image: ghcr.io/tomp736/pyfi/pyfi_server:latest-dev
+    ports:
+      - "8081:9234"
+    env_file:
+      - 'server_api.env'
+    networks:
+      - prom_net
+    volumes: 
+      - /srv/pyfi/etc:/srv/pyfi/etc:rw
+      - /srv/pyfi/data:/srv/pyfi/data:rw
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 100M
+        reservations:
+          cpus: '0.5'
+          memory: 25M
+    restart: unless-stopped
+
+  # Monitoring and Load Testing Services
+  prometheus:
+    image: prom/prometheus
+    networks:
+      - prom_net
+    ports:
+      - 9090:9090
+    volumes: 
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - /srv/pyfi/prometheus:/prometheus:rw
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 100M
+        reservations:
+          cpus: '0.5'
+          memory: 100M
+    restart: always
+    
+  grafana:
+    image: grafana/grafana:latest
+    networks:
+      - prom_net
+    ports:
+      - 9091:3000
+    volumes: 
+      - ./grafana/dashboards:/etc/dashboards
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - /srv/pyfi/grafana:/var/lib/grafana:rw
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 100M
+        reservations:
+          cpus: '0.5'
+          memory: 100M
+    restart: always
+
+networks:
+  prom_net: 

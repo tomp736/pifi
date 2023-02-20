@@ -13,7 +13,7 @@ def main():
     app.register_blueprint(app_frontend_transaction)
 
     app.run(
-        host="",
+        host="0.0.0.0",
         port=int("9234"),
         debug=False
     )

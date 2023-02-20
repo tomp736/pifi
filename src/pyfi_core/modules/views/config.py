@@ -6,14 +6,12 @@ import sys
 from pyfi_core.modules.views.transaction import AmountFilterStrategy, RegexFieldFilterStrategy
 
 
-def read_view_config(file_path):
-    with open(file_path) as f:
+def read_file(json_file_path):
+    with open(json_file_path, 'r') as f:
         data = json.load(f)
+        return read_json(data)
 
-    return parse_view_config(data)
-
-
-def parse_view_config(data):
+def read_json(data):
     view_config = []
     for item in data:
         name = item['name']
